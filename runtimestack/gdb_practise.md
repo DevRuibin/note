@@ -204,4 +204,50 @@ You guessed the secret code!
 [Inferior 1 (process 26437) exited normally]
 ```
 
+## 实战2
 
+这里也有一个二进制程序：[网址](https://1drv.ms/u/s!AtjGRmN0hGM-eqJofuOTo5rqqCM?e=GI1iXd)
+
+我们现在运行一下这个程序，了解他的基本行为。然后，我告诉你们，这个程序有一个后门，你们很难触发他，请你用gdb去触发它。
+
+思路：
+
+我们找那些`jmp`指令，找到之后，让程序跳转至那里，然后运行。
+
+1. 运行gdb
+2. 直接运行一遍，初始化内存
+3. `break main`
+4. `disass main`
+5. 分析我们首先找到一个
+   ```
+    0x00000000004011c0 <+90>:	je     0x40122f <main+201>
+    0x00000000004011c2 <+92>:	mov    -0xc(%rbp),%eax
+   ```
+   现在我们怀疑有一个条件在这里很难到达，只有开发者知道如何才能触发。所以我就在这里打断点`b *0x00000000004011c2`。然后运行程序，发现真的程序不会暂停。于是我就在main函数入口处设立断点，之后使用`jump *0x00000000004011c2`  让程序强制跳转，跳转后，执行`continue`，之后就会发现我们找到了后门。
+   ```
+   (gdb) break main
+    Breakpoint 9 at 0x40116a
+    (gdb) r
+    Starting program: /home/ruibin/Downloads/files (1)/Tutorial-03/Cheating/3.5/backdoor 
+    [Thread debugging using libthread_db enabled]
+    Using host libthread_db library "/lib64/libthread_db.so.1".
+
+    Breakpoint 9, 0x000000000040116a in main ()
+    (gdb) jump 0x00000000004011c2
+    Function "0x00000000004011c2" not defined.
+    (gdb) jump *0x00000000004011c2
+    Continuing at 0x4011c2.
+
+    Breakpoint 7, 0x00000000004011c2 in main ()
+    (gdb) continue
+    Continuing.
+    Today I am evil and your input is now 468775808
+    You input was 0
+    [Inferior 1 (process 28526) exited normally]
+   ```
+   
+### 分析
+    程序对这个函数进行了复杂的分析，只有满足这个条件才会跳转。比如，这个数据在某个比特位必须是1。
+    
+## 
+    
