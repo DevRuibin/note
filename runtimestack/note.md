@@ -5,7 +5,7 @@
 ## 内存和栈
 先放一张内存图，让大家有一个直观了解。然后要记住，stack是从高地址向低地址延伸
 
-![stacl](./imgs/stack.gif)
+![stacl](https://github.com/ruibinzhang021/note/blob/main/runtimestack/imgs/stack.gif?raw=true)
 
 ## 汇编基础
 
