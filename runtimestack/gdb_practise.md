@@ -111,3 +111,97 @@ p b // 打印 a 和 b
 
 在这个部分，我们让可执行程序不带源代码信息 `gcc basic.c -o basic`
 大家可以自己去尝试一遍，这个和带调试信息的区别。 大体是一样的，区别就是当我们使用s命令的时候，之前的方式会跳转到下一个有行信息的指令。但是现在我们的源代码信息丢失了，所以我们使用c就不知道能跳转到哪里去了。
+
+## 实战
+
+在这里我会提供一个二进制程序，具体访问这个网址：[网址](https://1drv.ms/u/s!AtjGRmN0hGM-ecokQwv2iAgr-Rw?e=r4LNdl)。我们一起分析这个玩具代码
+
+```bash
+gdb -q ./code
+```
+
+```bash
+run
+```
+
+我们得到：
+
+```bash
+(gdb) r
+Starting program: /home/ruibin/Downloads/files (1)/Tutorial-03/Cheating/3.4/code 
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib64/libthread_db.so.1".
+Input passcode: 
+```
+我们随便输一个密码就， 结果当然是密码错误。
+
+接着我们看汇编代码
+
+```
+disass main
+```
+
+这是输出结果
+
+```bash
+(gdb) disass main
+Dump of assembler code for function main:
+   0x0000000000401146 <+0>:	push   %rbp
+   0x0000000000401147 <+1>:	mov    %rsp,%rbp
+   0x000000000040114a <+4>:	sub    $0x20,%rsp
+   0x000000000040114e <+8>:	mov    %edi,-0x14(%rbp)
+   0x0000000000401151 <+11>:	mov    %rsi,-0x20(%rbp)
+   0x0000000000401155 <+15>:	mov    $0x402010,%edi
+   0x000000000040115a <+20>:	mov    $0x0,%eax
+   0x000000000040115f <+25>:	call   0x401040 <printf@plt>
+   0x0000000000401164 <+30>:	lea    -0x4(%rbp),%rax
+   0x0000000000401168 <+34>:	mov    %rax,%rsi
+   0x000000000040116b <+37>:	mov    $0x402021,%edi
+   0x0000000000401170 <+42>:	mov    $0x0,%eax
+   0x0000000000401175 <+47>:	call   0x401050 <__isoc99_scanf@plt>
+   0x000000000040117a <+52>:	mov    -0x4(%rbp),%eax
+   0x000000000040117d <+55>:	cmp    $0xcafebabe,%eax
+   0x0000000000401182 <+60>:	jne    0x401190 <main+74>
+   0x0000000000401184 <+62>:	mov    $0x402024,%edi
+   0x0000000000401189 <+67>:	call   0x401030 <puts@plt>
+   0x000000000040118e <+72>:	jmp    0x40119a <main+84>
+   0x0000000000401190 <+74>:	mov    $0x402041,%edi
+   0x0000000000401195 <+79>:	call   0x401030 <puts@plt>
+   0x000000000040119a <+84>:	mov    $0x0,%eax
+   0x000000000040119f <+89>:	leave
+   0x00000000004011a0 <+90>:	ret
+End of assembler dump.
+```
+
+> 我们知道既然有输入密码，肯定有要比较的地方，就找cmp函数。
+> `   0x000000000040117d <+55>:	cmp    $0xcafebabe,%eax`
+
+找到了, 
+
+`0xcafebabe` 这个就是要找的立即数，我们把它打印出来
+
+```bash
+(gdb) printf "%d\n%u\n", 0xcafebabe, 0xcafebabe
+-889275714
+3405691582
+```
+一个是有符号数字，一个是无符号数字。这两是一样的，都是密码。
+
+```bash
+(gdb) r 
+Starting program: /home/ruibin/Downloads/files (1)/Tutorial-03/Cheating/3.4/code 
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib64/libthread_db.so.1".
+Input passcode: -889275714
+You guessed the secret code!
+[Inferior 1 (process 26435) exited normally]
+(gdb) r 
+Starting program: /home/ruibin/Downloads/files (1)/Tutorial-03/Cheating/3.4/code 
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib64/libthread_db.so.1".
+Input passcode: 3405691582
+You guessed the secret code!
+[Inferior 1 (process 26437) exited normally]
+```
+
+
